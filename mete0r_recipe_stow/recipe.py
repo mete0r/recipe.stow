@@ -71,7 +71,7 @@ class Recipe:
                     dst_dir = os.path.dirname(dst_abspath)
                     if not os.path.exists(dst_dir):
                         os.makedirs(dst_dir)
-                    os.symlink(src_abspath, dst_abspath)
+                    make_symlink(src_abspath, dst_abspath)
                 except Exception as e:
                     logger.exception(e)
                     logger.warning('  ! Failed to symlink at: %s', dst_abspath)
@@ -80,6 +80,23 @@ class Recipe:
 
     def update(self):
         return self.install()
+
+
+def make_symlink(src_abspath, dst_abspath):
+    assert src_abspath.startswith('/')
+    assert dst_abspath.startswith('/')
+
+    # if target is existing-but-same-target, overwrite it
+    if os.path.islink(dst_abspath):
+        if resolve_symlink(dst_abspath) == src_abspath:
+            os.unlink(dst_abspath)
+    os.symlink(src_abspath, dst_abspath)
+
+
+def resolve_symlink(path):
+    path = os.path.realpath(path)
+    path = os.path.abspath(path)
+    return path
 
 
 def buildout_read_installed_options(buildout, sections):
